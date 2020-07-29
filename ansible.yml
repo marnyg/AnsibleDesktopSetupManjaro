@@ -1,18 +1,22 @@
 ---
 
 #- debug: msg="{{ lookup('env','HOME') }} is an environment variable"
-
   - name: Provision Fresh Manjaro
     hosts: manjaroPC
+    vars:
+      user:
+        name: mar2
+        pass : 123
     roles:
         - kewlfft.aur
     tasks:
 
-      - name: Check the Git package
+      - name: Installing packages
         pacman: 
           name:
             - networkmanager
-            - feh
+            - xwallpaper
+            - gnome-keyring
             - neovim
             - compton
             - sudo
@@ -22,6 +26,7 @@
             - libx11
             - libxft
             - libxinerama
+            - ttf-linux-libertine
             - libxext
               #- xorg-fonts-misc
               #- xorg
@@ -35,6 +40,8 @@
             - firefox
             - mpv
             - mpd
+            - unrar
+            - unzip
             - newsboat
             - htop
             - mpc
@@ -54,18 +61,23 @@
             - chafa
             - atool
             - mediainfo
-            - pdftotxt
-            - otd2txt
+              #- pdftotxt
+              #- otd2txt
             - sxiv
             - youtube-dl
             - redshift
             - clipmenu
+            - emacs
+            - noto-fonts
           state: present
         become: yes
 
       - name: install packages from aur
         aur:
-          name: lf-bin
+          name:
+            - lf-bin
+            - font-symbola
+            - zsh-fast-syntax-highlighting
           state: present
           use: yay
 
@@ -140,14 +152,48 @@
           chdir: /home/devops/.config/lf
           cmd: cp ./scope ./scope1
 
-      - name: install oh-my-zsh
+      - name: run PlugInstall in vim
         become: yes
         become_user: devops
+        ignore_errors: yes
         command: 
-          cmd: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+          cmd: vim +PlugInstall +qall --headless
+          
+          #      - name: set up pam to start gnome keyring at login
+          #        become: yes
+          #        pamd:
+          #          name: login
+          #          type: auth
+          #          control: include
+          #          module_path: system-local-login
+          #          new_type: auth
+          #          new_control: optional
+          #          new_module_path: pam_gnome_keyring.so
+          #          state: after
+          #
+          #      - name: set up pam to start gnome keyring at login
+          #        become: yes
+          #        pamd:
+          #          name: login
+          #          type: session
+          #          control: include
+          #          module_path: system-local-login
+          #          new_type: session
+          #          new_control: optional
+          #          new_module_path: pam_gnome_keyring.so
+          #          state: after
+          #          module_arguments: auto_start
 
+      - name: install ohmyzsh
+        become: yes
+        become_user: devops
+        git:
+          repo: https://github.com/ohmyzsh/ohmyzsh
+          dest: ~/.config/oh-my-zsh
 
       - name: Clean artifact path
+        become: yes
+        become_user: devops
         file:
           state: absent
           path: "{{item}}"
@@ -160,11 +206,11 @@
             - ~/Videos
             - ~/Public
 
-      - name: remove user named devops
-        become: yes
-        user:
-          name: devops
-          password: "{{ lookup('env','test') }}"
-          state: absent
-          remove: yes
-        tags: r
+              #      - name: remove user named devops
+              #        become: yes
+              #        user:
+              #          name: devops
+              #          password: "{{ lookup('env','test') }}"
+              #          state: absent
+              #          remove: yes
+              #        tags: r
