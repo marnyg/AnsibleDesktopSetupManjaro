@@ -1,0 +1,128 @@
+---
+
+#- debug: msg="{{ lookup('env','HOME') }} is an environment variable"
+
+  - name: Provision Fresh Manjaro
+    hosts: manjaroPC
+    roles:
+        - kewlfft.aur
+    tasks:
+
+      - name: Check the Git package
+        pacman: 
+          name:
+            - networkmanager
+            - feh
+            - neovim
+            - compton
+            - sudo
+            - git
+            - dmenu
+            - freetype2
+            - libx11
+            - libxft
+            - libxinerama
+            - libxext
+              #- xorg-fonts-misc
+              #- xorg
+            - ranger
+            - sxhkd
+            - xorg-xinit
+            - tree
+            - bash-completion
+            - chromium
+            - qutebrowser
+            - firefox
+            - mpv
+            - mpd
+            - newsboat
+            - htop
+            - mpc
+            - openssh
+            - zsh
+            - nextcloud-client
+            - unclutter
+            - seahorse
+            - arandr
+            - tmux
+          state: present
+        become: yes
+
+      - name: install packages from aur
+        aur:
+          name: lf-bin
+          state: present
+          use: yay
+
+      - name: Add a new user named devops
+        user:
+          name: devops
+          shell: /bin/zsh
+          password: "{{ lookup('env','test') }}"
+        become: yes
+
+      - name: Add devops user to the sudoers
+        become: yes
+        copy:
+          dest: "/etc/sudoers.d/devops"
+          content: "devops  ALL=(ALL)  NOPASSWD: ALL"
+
+      - name: Deploy SSH Key
+        become: yes
+        authorized_key: 
+          user=devops
+          state=present
+          key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+
+      - name: clone dwm
+        become: yes
+        become_user: devops
+        ignore_errors: yes
+        git:
+          repo: "{{item.url}}"
+          dest: "~/.local/src/{{item.folder}}"
+        loop:
+            - { url: "https://github.com/marnyg/dwm2.git", folder: "dwm"}
+            - { url: "https://github.com/marnyg/st2.git", folder: "st"}
+            - { url: "https://github.com/marnyg/dotfilesArch.git", folder: "dotfilesArch"}
+
+      - name: make and install dwm src from git
+        become: yes
+        become_user: devops
+        make:
+          chdir: ~/.local/src/dwm/
+
+      - name: make and install dwm src from git
+        become: yes
+        make:
+          chdir: /home/devops/.local/src/dwm/
+          target: install
+
+      - name: make and install st src from git
+        become: yes
+        become_user: devops
+        make:
+          chdir: ~/.local/src/st/
+
+      - name: make and install st src from git
+        become: yes
+        make:
+          chdir: /home/devops/.local/src/st/
+          target: install
+
+      - name: run dotfiles init script
+        become: yes
+        become_user: devops
+        command: 
+          chdir: /home/devops/.local/src/dotfilesArch/
+          cmd: ./initScript
+
+      - name: remove user named devops
+        become: yes
+        user:
+          name: devops
+          password: "{{ lookup('env','test') }}"
+          state: absent
+          remove: yes
+        tags: r
