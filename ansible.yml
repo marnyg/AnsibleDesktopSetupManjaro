@@ -45,6 +45,15 @@
             - seahorse
             - arandr
             - tmux
+            - dunst
+            - fzf
+            - highlight
+            - w3m
+            - chafa
+            - atool
+            - mediainfo
+            - pdftotxt
+            - otd2txt
           state: present
         become: yes
 
@@ -58,7 +67,7 @@
         user:
           name: devops
           shell: /bin/zsh
-          password: "{{ lookup('env','test') }}"
+          password: "{{ lookup('env','SETPASS') }}"
         become: yes
 
       - name: Add devops user to the sudoers
@@ -117,6 +126,19 @@
         command: 
           chdir: /home/devops/.local/src/dotfilesArch/
           cmd: ./initScript
+
+      - name: Clean artifact path
+        file:
+          state: absent
+          path: "{{item}}"
+        loop:
+            - ~/Desktop
+            - ~/Documents
+            - ~/Music
+            - ~/Pictures
+            - ~/Templates
+            - ~/Videos
+            - ~/Public
 
       - name: remove user named devops
         become: yes
