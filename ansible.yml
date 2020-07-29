@@ -44,6 +44,8 @@
             - unclutter
             - seahorse
             - arandr
+            - zathura
+            - mupdf
             - tmux
             - dunst
             - fzf
@@ -54,6 +56,10 @@
             - mediainfo
             - pdftotxt
             - otd2txt
+            - sxiv
+            - youtube-dl
+            - redshift
+            - clipmenu
           state: present
         become: yes
 
@@ -126,6 +132,20 @@
         command: 
           chdir: /home/devops/.local/src/dotfilesArch/
           cmd: ./initScript
+
+      - name: fix problem with lf not reading config if it is a symlink
+        become: yes
+        become_user: devops
+        command: 
+          chdir: /home/devops/.config/lf
+          cmd: cp ./scope ./scope1
+
+      - name: install oh-my-zsh
+        become: yes
+        become_user: devops
+        command: 
+          cmd: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
 
       - name: Clean artifact path
         file:
