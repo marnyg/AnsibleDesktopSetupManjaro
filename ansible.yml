@@ -74,33 +74,33 @@
           state: present
         become: yes
 
-      - name: Add a new user named devops
+      - name: Add a new user named mar
         user:
-          name: devops
+          name: mar
           shell: /bin/zsh
           password: "{{ lookup('env','SETPASS') }}"
           groups: docker
 
         become: yes
 
-      - name: Add devops user to the sudoers
+      - name: Add mar user to the sudoers
         become: yes
         copy:
-          dest: "/etc/sudoers.d/devops"
-          content: "devops  ALL=(ALL)  NOPASSWD: ALL"
+          dest: "/etc/sudoers.d/mar"
+          content: "mar  ALL=(ALL)  ALL"
 
       - name: clone yay
         become: yes
-        become_user: devops
+        become_user: mar
         git:
           repo: "https://aur.archlinux.org/yay.git"
           dest: "~/.local/src/yay"
 
       - name: install yay
         become: yes
-        become_user: devops
+        become_user: mar
         command: 
-          chdir: /home/devops/.local/src/yay/
+          chdir: /home/mar/.local/src/yay/
           cmd: makepkg -si --noconfirm
 
       # - name: install packages from aur
@@ -112,16 +112,16 @@
       #     state: present
       #     use: yay
 
-      - name: Deploy SSH Key
-        become: yes
-        authorized_key: 
-          user=devops
-          state=present
-          key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+          # - name: Deploy SSH Key
+          #   become: yes
+          #   authorized_key: 
+          #     user=mar
+          #     state=present
+          #     key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
       - name: clone dwm
         become: yes
-        become_user: devops
+        become_user: mar
         ignore_errors: yes
         git:
           repo: "{{item.url}}"
@@ -133,57 +133,57 @@
 
       - name: make and install dwm src from git
         become: yes
-        become_user: devops
+        become_user: mar
         make:
           chdir: ~/.local/src/dwm/
 
       - name: make and install dwm src from git
         become: yes
         make:
-          chdir: /home/devops/.local/src/dwm/
+          chdir: /home/mar/.local/src/dwm/
           target: install
 
       - name: make and install dwm src from git
         become: yes
         make:
-          chdir: /home/devops/.local/src/dwm/
+          chdir: /home/mar/.local/src/dwm/
           target: clean
 
       - name: make and install st src from git
         become: yes
-        become_user: devops
+        become_user: mar
         make:
           chdir: ~/.local/src/st/
 
       - name: make and install st src from git
         become: yes
         make:
-          chdir: /home/devops/.local/src/st/
+          chdir: /home/mar/.local/src/st/
           target: install
 
       - name: make and install st src from git
         become: yes
         make:
-          chdir: /home/devops/.local/src/st/
+          chdir: /home/mar/.local/src/st/
           target: clean
 
       - name: run dotfiles init script
         become: yes
-        become_user: devops
+        become_user: mar
         command: 
-          chdir: /home/devops/.local/src/dotfilesArch/
+          chdir: /home/mar/.local/src/dotfilesArch/
           cmd: ./initScript
 
       - name: fix problem with lf not reading config if it is a symlink
         become: yes
-        become_user: devops
+        become_user: mar
         command: 
-          chdir: /home/devops/.config/lf
+          chdir: /home/mar/.config/lf
           cmd: cp ./scope ./scope1
 
       - name: run PlugInstall in vim
         become: yes
-        become_user: devops
+        become_user: mar
         ignore_errors: yes
         command: 
           cmd: vim +PlugInstall +qall --headless
@@ -215,14 +215,14 @@
 
       - name: install ohmyzsh
         become: yes
-        become_user: devops
+        become_user: mar
         git:
           repo: https://github.com/ohmyzsh/ohmyzsh
           dest: ~/.config/oh-my-zsh
 
       - name: Clean artifact path
         become: yes
-        become_user: devops
+        become_user: mar
         file:
           state: absent
           path: "{{item}}"
