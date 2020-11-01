@@ -5,8 +5,8 @@
     hosts: manjaroPC
     vars:
       user:
-        name: mar2
-        pass : 123
+        name: man
+        pass : 1a2b3c45
     roles:
         - kewlfft.aur
     tasks:
@@ -69,23 +69,18 @@
             - clipmenu
             - emacs
             - noto-fonts
+            - ansible
+            - docker
           state: present
         become: yes
-
-      - name: install packages from aur
-        aur:
-          name:
-            - lf-bin
-            - font-symbola
-            - zsh-fast-syntax-highlighting
-          state: present
-          use: yay
 
       - name: Add a new user named devops
         user:
           name: devops
           shell: /bin/zsh
           password: "{{ lookup('env','SETPASS') }}"
+          groups: docker
+
         become: yes
 
       - name: Add devops user to the sudoers
@@ -94,13 +89,35 @@
           dest: "/etc/sudoers.d/devops"
           content: "devops  ALL=(ALL)  NOPASSWD: ALL"
 
+      - name: clone yay
+        become: yes
+        become_user: devops
+        git:
+          repo: "https://aur.archlinux.org/yay.git"
+          dest: "~/.local/src/yay"
+
+      - name: install yay
+        become: yes
+        become_user: devops
+        command: 
+          chdir: /home/devops/.local/src/yay/
+          cmd: makepkg -si --noconfirm
+
+      # - name: install packages from aur
+      #   aur:
+      #     name:
+      #       - lf-bin
+      #       - font-symbola
+      #       - zsh-fast-syntax-highlighting
+      #     state: present
+      #     use: yay
+
       - name: Deploy SSH Key
         become: yes
         authorized_key: 
           user=devops
           state=present
           key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-
 
       - name: clone dwm
         become: yes
@@ -126,6 +143,12 @@
           chdir: /home/devops/.local/src/dwm/
           target: install
 
+      - name: make and install dwm src from git
+        become: yes
+        make:
+          chdir: /home/devops/.local/src/dwm/
+          target: clean
+
       - name: make and install st src from git
         become: yes
         become_user: devops
@@ -137,6 +160,12 @@
         make:
           chdir: /home/devops/.local/src/st/
           target: install
+
+      - name: make and install st src from git
+        become: yes
+        make:
+          chdir: /home/devops/.local/src/st/
+          target: clean
 
       - name: run dotfiles init script
         become: yes
@@ -205,6 +234,12 @@
             - ~/Templates
             - ~/Videos
             - ~/Public
+
+      - name: Enable service docker, and not touch the state
+        service:
+          name: docker.service
+          state: started
+          enabled: yes
 
               #      - name: remove user named devops
               #        become: yes
