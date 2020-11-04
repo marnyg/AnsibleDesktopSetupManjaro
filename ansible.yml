@@ -7,11 +7,12 @@
       user:
         name: man
         pass : 1a2b3c45
+        newUsername: mar
     roles:
         - kewlfft.aur
     tasks:
 
-      - name: Installing packages
+      - name: Installing pacman packages
         pacman: 
           name:
             - networkmanager
@@ -61,8 +62,6 @@
             - chafa
             - atool
             - mediainfo
-              #- pdftotxt
-              #- otd2txt
             - sxiv
             - youtube-dl
             - redshift
@@ -71,57 +70,72 @@
             - noto-fonts
             - ansible
             - docker
+            - pass
+            - zathura-pdf-mupdf
+            - pandoc
+            - hunspell-en_US
+            - ttf-joypixels
+            - xorg-xsetroot
+            - pdfjs
+            - noto-fonts-emoji
           state: present
         become: yes
 
+        - name: Installing pip packages
+        pip:
+          name:
+            - pdftotxt
+
       - name: Add a new user named mar
         user:
-          name: mar
+          name: "{{ newUsername }}"
           shell: /bin/zsh
           password: "{{ lookup('env','SETPASS') }}"
           groups: docker
-
         become: yes
 
       - name: Add mar user to the sudoers
         become: yes
         copy:
-          dest: "/etc/sudoers.d/mar"
-          content: "mar  ALL=(ALL)  ALL"
+          dest: "/etc/sudoers.d/{{ newUsername }}"
+          content: "{{ newUsername }}  ALL=(ALL)  ALL"
 
       - name: clone yay
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         git:
           repo: "https://aur.archlinux.org/yay.git"
           dest: "~/.local/src/yay"
 
       - name: install yay
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         command: 
-          chdir: /home/mar/.local/src/yay/
+          chdir: "/home/{{ newUsername }}/.local/src/yay/"
           cmd: makepkg -si --noconfirm
 
-      # - name: install packages from aur
-      #   aur:
-      #     name:
-      #       - lf-bin
-      #       - font-symbola
-      #       - zsh-fast-syntax-highlighting
-      #     state: present
-      #     use: yay
+      - name: install packages from aur
+        aur:
+          name:
+            - lf-bin
+            - font-symbola
+            - zsh-fast-syntax-highlighting
+            - otd2txt
+            - hunspell-nb
+            - ttf-iosevka
+          state: present
+          use: yay
 
-          # - name: Deploy SSH Key
-          #   become: yes
-          #   authorized_key: 
-          #     user=mar
-          #     state=present
-          #     key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      - name: Deploy SSH Key
+        become: yes
+        authorized_key: 
+          user="{{ newUsername }}"
+          state=present
+          key= https://github.com/marnyg.keys
 
       - name: clone dwm
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         ignore_errors: yes
         git:
           repo: "{{item.url}}"
@@ -131,62 +145,71 @@
             - { url: "https://github.com/marnyg/st2.git", folder: "st"}
             - { url: "https://github.com/marnyg/dotfilesArch.git", folder: "dotfilesArch"}
 
+      - name: Clone bitbucket repo
+        become_user: "{{ newUsername }}"
+        git:
+          repo: git@github.com:marnyg/pass.git
+          dest: ~/.local/share/password-store
+          accept_hostkey: yes
+          key_file: ~/.local/share/gnupg/private-keys-v1.d/1CEE2408C1012576B6086E05D54D42E2267EFEEB.key
+        ignore_errors: yes
+      
       - name: make and install dwm src from git
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         make:
           chdir: ~/.local/src/dwm/
 
       - name: make and install dwm src from git
         become: yes
         make:
-          chdir: /home/mar/.local/src/dwm/
+          chdir: "/home/{{ newUsername }}/.local/src/dwm/"
           target: install
 
       - name: make and install dwm src from git
         become: yes
         make:
-          chdir: /home/mar/.local/src/dwm/
+          chdir: "/home/{{ newUsername }}/.local/src/dwm/"
           target: clean
 
       - name: make and install st src from git
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         make:
           chdir: ~/.local/src/st/
 
       - name: make and install st src from git
         become: yes
         make:
-          chdir: /home/mar/.local/src/st/
+          chdir: "/home/{{ newUsername }}/.local/src/st/"
           target: install
 
       - name: make and install st src from git
         become: yes
         make:
-          chdir: /home/mar/.local/src/st/
+          chdir: "/home/{{ newUsername }}/.local/src/st/"
           target: clean
 
       - name: run dotfiles init script
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         command: 
-          chdir: /home/mar/.local/src/dotfilesArch/
+          chdir: "/home/{{ newUsername }}/.local/src/dotfilesArch/"
           cmd: ./initScript
 
       - name: fix problem with lf not reading config if it is a symlink
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         command: 
-          chdir: /home/mar/.config/lf
+          chdir: "/home/{{ newUsername }}/.config/lf"
           cmd: cp ./scope ./scope1
 
-      - name: run PlugInstall in vim
+      - name: run PlugInstall in nvim
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         ignore_errors: yes
         command: 
-          cmd: vim +PlugInstall +qall --headless
+          cmd: nvim +PlugInstall +qall --headless
           
           #      - name: set up pam to start gnome keyring at login
           #        become: yes
@@ -215,14 +238,14 @@
 
       - name: install ohmyzsh
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         git:
           repo: https://github.com/ohmyzsh/ohmyzsh
           dest: ~/.config/oh-my-zsh
 
       - name: Clean artifact path
         become: yes
-        become_user: mar
+        become_user: "{{ newUsername }}"
         file:
           state: absent
           path: "{{item}}"
