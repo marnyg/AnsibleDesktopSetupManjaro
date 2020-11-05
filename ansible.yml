@@ -152,7 +152,6 @@
           repo: git@github.com:marnyg/pass.git
           dest: ~/.local/share/password-store
           accept_hostkey: yes
-          key_file: ~/.local/share/gnupg/private-keys-v1.d/1CEE2408C1012576B6086E05D54D42E2267EFEEB.key
         ignore_errors: yes
       
       - name: make and install dwm src from git
