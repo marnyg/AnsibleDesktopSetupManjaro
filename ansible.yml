@@ -78,6 +78,7 @@
             - xorg-xsetroot
             - pdfjs
             - noto-fonts-emoji
+            - scrot
           state: present
         become: yes
 
