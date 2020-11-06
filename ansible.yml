@@ -16,6 +16,7 @@
         pacman: 
           name:
             - networkmanager
+            - base-devel
             - xwallpaper
             - gnome-keyring
             - neovim
@@ -82,61 +83,62 @@
           state: present
         become: yes
 
-        - name: Installing pip packages
+      - name: Installing pip packages
         pip:
           name:
-            - pdftotxt
+              #            - pdftotxt
+            - tldextract
 
       - name: Add a new user named mar
         user:
-          name: "{{ newUsername }}"
+          name: "{{ user.newUsername }}"
           shell: /bin/zsh
-          password: "{{ lookup('env','SETPASS') }}"
+          password: "{{ lookup('env','SETPASS') | password_hash('sha512', 'mysecretsalt') }}"
           groups: docker
         become: yes
 
       - name: Add mar user to the sudoers
         become: yes
         copy:
-          dest: "/etc/sudoers.d/{{ newUsername }}"
-          content: "{{ newUsername }}  ALL=(ALL)  ALL"
+          dest: "/etc/sudoers.d/{{ user.newUsername }}"
+          content: "{{ user.newUsername }}  ALL=(ALL)  ALL"
 
       - name: clone yay
-        become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         git:
           repo: "https://aur.archlinux.org/yay.git"
           dest: "~/.local/src/yay"
 
-      - name: install yay
-        become: yes
-        become_user: "{{ newUsername }}"
-        command: 
-          chdir: "/home/{{ newUsername }}/.local/src/yay/"
-          cmd: makepkg -si --noconfirm
+          #- name: install yay
+          #  become_user: "{{ user.newUsername }}"
+          #  become: yes
+          #  command: 
+          #    chdir: "/home/{{ user.newUsername }}/.local/src/yay/"
+          #    cmd: makepkg -si --noconfirm
 
-      - name: install packages from aur
-        aur:
-          name:
-            - lf-bin
-            - font-symbola
-            - zsh-fast-syntax-highlighting
-            - otd2txt
-            - hunspell-nb
-            - ttf-iosevka
-          state: present
-          use: yay
+          #- name: install packages from aur
+          #  become_user: "{{ user.newUsername }}"
+          #  aur:
+          #    name:
+          #      - lf-bin
+          #      - font-symbola
+          #      - zsh-fast-syntax-highlighting
+          #      - otd2txt
+          #      - hunspell-nb
+          #      - ttf-iosevka
+          #    state: present
+          #    use: yay
 
       - name: Deploy SSH Key
         become: yes
         authorized_key: 
-          user="{{ newUsername }}"
-          state=present
-          key= https://github.com/marnyg.keys
+          user: "{{ user.newUsername }}"
+          state: present
+          key: https://github.com/marnyg.keys
 
       - name: clone dwm
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         ignore_errors: yes
         git:
           repo: "{{item.url}}"
@@ -147,7 +149,7 @@
             - { url: "https://github.com/marnyg/dotfilesArch.git", folder: "dotfilesArch"}
 
       - name: Clone bitbucket repo
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         git:
           repo: git@github.com:marnyg/pass.git
           dest: ~/.local/share/password-store
@@ -156,57 +158,57 @@
       
       - name: make and install dwm src from git
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         make:
           chdir: ~/.local/src/dwm/
 
       - name: make and install dwm src from git
         become: yes
         make:
-          chdir: "/home/{{ newUsername }}/.local/src/dwm/"
+          chdir: "/home/{{ user.newUsername }}/.local/src/dwm/"
           target: install
 
       - name: make and install dwm src from git
         become: yes
         make:
-          chdir: "/home/{{ newUsername }}/.local/src/dwm/"
+          chdir: "/home/{{ user.newUsername }}/.local/src/dwm/"
           target: clean
 
       - name: make and install st src from git
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         make:
           chdir: ~/.local/src/st/
 
       - name: make and install st src from git
         become: yes
         make:
-          chdir: "/home/{{ newUsername }}/.local/src/st/"
+          chdir: "/home/{{ user.newUsername }}/.local/src/st/"
           target: install
 
       - name: make and install st src from git
         become: yes
         make:
-          chdir: "/home/{{ newUsername }}/.local/src/st/"
+          chdir: "/home/{{ user.newUsername }}/.local/src/st/"
           target: clean
 
       - name: run dotfiles init script
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         command: 
-          chdir: "/home/{{ newUsername }}/.local/src/dotfilesArch/"
+          chdir: "/home/{{ user.newUsername }}/.local/src/dotfilesArch/"
           cmd: ./initScript
 
       - name: fix problem with lf not reading config if it is a symlink
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         command: 
-          chdir: "/home/{{ newUsername }}/.config/lf"
+          chdir: "/home/{{ user.newUsername }}/.config/lf"
           cmd: cp ./scope ./scope1
 
       - name: run PlugInstall in nvim
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         ignore_errors: yes
         command: 
           cmd: nvim +PlugInstall +qall --headless
@@ -238,14 +240,14 @@
 
       - name: install ohmyzsh
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         git:
           repo: https://github.com/ohmyzsh/ohmyzsh
           dest: ~/.config/oh-my-zsh
 
       - name: Clean artifact path
         become: yes
-        become_user: "{{ newUsername }}"
+        become_user: "{{ user.newUsername }}"
         file:
           state: absent
           path: "{{item}}"
@@ -259,6 +261,7 @@
             - ~/Public
 
       - name: Enable service docker, and not touch the state
+        become: yes
         service:
           name: docker.service
           state: started
