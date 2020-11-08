@@ -1,6 +1,4 @@
 ---
-
-#- debug: msg="{{ lookup('env','HOME') }} is an environment variable"
   - name: Provision Fresh Manjaro
     hosts: manjaroPC
     vars:
@@ -11,10 +9,21 @@
     roles:
         - kewlfft.aur
     tasks:
+      - name: Installing initial packages
+        become: yes
+        pacman:
+          name: 
+            - yay
+            - xorg-mkfontdir
+            - docker
 
       - name: Installing pacman packages
+        async: 3600
+        poll: 0
+        become: yes
         pacman: 
           name:
+            - xorg-mkfontdir
             - networkmanager
             - base-devel
             - xwallpaper
@@ -70,7 +79,6 @@
             - emacs
             - noto-fonts
             - ansible
-            - docker
             - pass
             - zathura-pdf-mupdf
             - pandoc
@@ -80,17 +88,20 @@
             - pdfjs
             - noto-fonts-emoji
             - scrot
+            - odt2txt
           state: present
-        become: yes
 
       - name: Installing pip packages
+        async: 100
+        poll: 0
         pip:
           name:
-              #            - pdftotxt
+            - pdftotext
             - tldextract
 
       - name: Add a new user named mar
         user:
+          state: present 
           name: "{{ user.newUsername }}"
           shell: /bin/zsh
           password: "{{ lookup('env','SETPASS') | password_hash('sha512', 'mysecretsalt') }}"
@@ -103,31 +114,53 @@
           dest: "/etc/sudoers.d/{{ user.newUsername }}"
           content: "{{ user.newUsername }}  ALL=(ALL)  ALL"
 
-      - name: clone yay
-        become_user: "{{ user.newUsername }}"
-        git:
-          repo: "https://aur.archlinux.org/yay.git"
-          dest: "~/.local/src/yay"
+          #- name: clone yay
+          #  become: yes
+          #  become_user: "{{ user.newUsername }}"
+          #  git:
+          #    repo: "https://aur.archlinux.org/yay.git"
+          #    dest: "~/.local/src/yay"
 
           #- name: install yay
-          #  become_user: "{{ user.newUsername }}"
+          #  async: 200
+          #  poll: 5
           #  become: yes
-          #  command: 
-          #    chdir: "/home/{{ user.newUsername }}/.local/src/yay/"
-          #    cmd: makepkg -si --noconfirm
-
-          #- name: install packages from aur
           #  become_user: "{{ user.newUsername }}"
+          #  ignore_errors: yes
           #  aur:
-          #    name:
-          #      - lf-bin
-          #      - font-symbola
-          #      - zsh-fast-syntax-highlighting
-          #      - otd2txt
-          #      - hunspell-nb
-          #      - ttf-iosevka
-          #    state: present
-          #    use: yay
+          #    name: yay
+          #    use: makepkg
+          #    local_pkgbuild: "/home/{{ user.newUsername }}/.local/src/yay/"
+
+      - name: make user
+        become: yes
+        user:
+          name: aur_builder
+          group: wheel
+
+      - name: add sudo privlages
+        become: yes
+        lineinfile:
+          path: /etc/sudoers.d/11-install-aur_builder
+          line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+          create: yes
+          validate: 'visudo -cf %s'
+
+      - name: install packages from aur
+        async: 1200
+        poll: 0
+        become: yes
+        become_user: aur_builder
+        ignore_errors: yes
+        aur:
+          use: yay
+          name:
+            - lf-bin
+            - font-symbola
+            - zsh-fast-syntax-highlighting
+            - hunspell-nb
+            - ttf-iosevka
+          state: present
 
       - name: Deploy SSH Key
         become: yes
@@ -141,6 +174,7 @@
         become_user: "{{ user.newUsername }}"
         ignore_errors: yes
         git:
+          force: yes
           repo: "{{item.url}}"
           dest: "~/.local/src/{{item.folder}}"
         loop:
@@ -148,7 +182,7 @@
             - { url: "https://github.com/marnyg/st2.git", folder: "st"}
             - { url: "https://github.com/marnyg/dotfilesArch.git", folder: "dotfilesArch"}
 
-      - name: Clone bitbucket repo
+      - name: Clone pass repo
         become_user: "{{ user.newUsername }}"
         git:
           repo: git@github.com:marnyg/pass.git
@@ -156,41 +190,29 @@
           accept_hostkey: yes
         ignore_errors: yes
       
-      - name: make and install dwm src from git
+      - name: make dwm src from git
         become: yes
         become_user: "{{ user.newUsername }}"
         make:
           chdir: ~/.local/src/dwm/
 
-      - name: make and install dwm src from git
+      - name: install dwm src from git
         become: yes
         make:
           chdir: "/home/{{ user.newUsername }}/.local/src/dwm/"
           target: install
 
-      - name: make and install dwm src from git
-        become: yes
-        make:
-          chdir: "/home/{{ user.newUsername }}/.local/src/dwm/"
-          target: clean
-
-      - name: make and install st src from git
+      - name: install st src from git
         become: yes
         become_user: "{{ user.newUsername }}"
         make:
           chdir: ~/.local/src/st/
 
-      - name: make and install st src from git
+      - name: install st src from git
         become: yes
         make:
           chdir: "/home/{{ user.newUsername }}/.local/src/st/"
           target: install
-
-      - name: make and install st src from git
-        become: yes
-        make:
-          chdir: "/home/{{ user.newUsername }}/.local/src/st/"
-          target: clean
 
       - name: run dotfiles init script
         become: yes

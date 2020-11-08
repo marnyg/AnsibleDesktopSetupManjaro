@@ -1,0 +1,75 @@
+---
+
+  - name: Provision Fresh Manjaro
+    hosts: manjaroPC
+    vars:
+      user:
+        name: man
+        pass : 1a2b3c45
+        newUsername: mar
+    roles:
+        - kewlfft.aur
+    tasks:
+
+        #- name: Clone pass repo
+        #  become: yes
+        #  become_user: "{{ user.newUsername }}"
+        #  git:
+        #    repo: git@github.com:marnyg/pass.git
+        #    dest: ~/.local/share/password-store
+        #    accept_hostkey: yes
+        #  ignore_errors: yes
+
+      - name: make user
+        become: yes
+        user:
+          name: aur_builder
+          group: wheel
+
+      - name: add sudo privlages
+        become: yes
+        lineinfile:
+          path: /etc/sudoers.d/11-install-aur_builder
+          line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+          create: yes
+          validate: 'visudo -cf %s'
+        
+      - name: install packages from aur
+        become: yes
+        become_user: aur_builder
+        ignore_errors: yes
+        aur:
+          use: yay
+          name:
+            - lf-bin
+            - font-symbola
+            - zsh-fast-syntax-highlighting
+            - hunspell-nb
+            - ttf-iosevka
+          state: present
+          
+          #      - name: set up pam to start gnome keyring at login
+          #        become: yes
+          #        pamd:
+          #          name: login
+          #          type: auth
+          #          control: include
+          #          module_path: system-local-login
+          #          new_type: auth
+          #          new_control: optional
+          #          new_module_path: pam_gnome_keyring.so
+          #          state: after
+          #
+          #      - name: set up pam to start gnome keyring at login
+          #        become: yes
+          #        pamd:
+          #          name: login
+          #          type: session
+          #          control: include
+          #          module_path: system-local-login
+          #          new_type: session
+          #          new_control: optional
+          #          new_module_path: pam_gnome_keyring.so
+          #          state: after
+          #          module_arguments: auto_start
+
