@@ -16,8 +16,9 @@
             - yay
             - xorg-mkfontdir
             - docker
+            - base-devel
 
-      - name: Installing pacman packages
+      - name: lazy installation of pacman packages
         async: 3600
         poll: 0
         become: yes
@@ -25,7 +26,6 @@
           name:
             - xorg-mkfontdir
             - networkmanager
-            - base-devel
             - xwallpaper
             - gnome-keyring
             - neovim
@@ -100,13 +100,13 @@
             - tldextract
 
       - name: Add a new user named mar
+        become: yes
         user:
-          state: present 
           name: "{{ user.newUsername }}"
           shell: /bin/zsh
           password: "{{ lookup('env','SETPASS') | password_hash('sha512', 'mysecretsalt') }}"
           groups: docker
-        become: yes
+          state: present 
 
       - name: Add mar user to the sudoers
         become: yes
@@ -114,25 +114,7 @@
           dest: "/etc/sudoers.d/{{ user.newUsername }}"
           content: "{{ user.newUsername }}  ALL=(ALL)  ALL"
 
-          #- name: clone yay
-          #  become: yes
-          #  become_user: "{{ user.newUsername }}"
-          #  git:
-          #    repo: "https://aur.archlinux.org/yay.git"
-          #    dest: "~/.local/src/yay"
-
-          #- name: install yay
-          #  async: 200
-          #  poll: 5
-          #  become: yes
-          #  become_user: "{{ user.newUsername }}"
-          #  ignore_errors: yes
-          #  aur:
-          #    name: yay
-          #    use: makepkg
-          #    local_pkgbuild: "/home/{{ user.newUsername }}/.local/src/yay/"
-
-      - name: make user
+      - name: make aur_builder user
         become: yes
         user:
           name: aur_builder
