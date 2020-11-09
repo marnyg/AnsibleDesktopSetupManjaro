@@ -89,6 +89,7 @@
             - noto-fonts-emoji
             - scrot
             - odt2txt
+            - xdotool
           state: present
 
       - name: Installing pip packages
