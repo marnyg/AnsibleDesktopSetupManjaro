@@ -143,6 +143,7 @@
             - zsh-fast-syntax-highlighting
             - hunspell-nb
             - ttf-iosevka
+            - starship-bin
           state: present
 
       - name: Deploy SSH Key
