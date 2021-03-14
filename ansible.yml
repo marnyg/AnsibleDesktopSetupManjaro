@@ -19,8 +19,6 @@
             - base-devel
 
       - name: lazy installation of pacman packages
-        async: 3600
-        poll: 0
         become: yes
         pacman: 
           name:
