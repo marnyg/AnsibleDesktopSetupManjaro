@@ -1,9 +1,9 @@
 ---
   - name: Provision Fresh Manjaro
-    hosts: manjaroPC
+    hosts: localhost
+    connection: local
     vars:
       user:
-        name: man
         pass : 1a2b3c45
         newUsername: mar
     roles:
