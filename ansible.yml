@@ -12,7 +12,7 @@
       - name: Installing initial packages
         become: yes
         pacman:
-          name: 
+          name:
             - yay
             - xorg-mkfontdir
             - docker
@@ -20,7 +20,7 @@
 
       - name: lazy installation of pacman packages
         become: yes
-        pacman: 
+        pacman:
           name:
             - xorg-mkfontdir
             - networkmanager
@@ -98,26 +98,11 @@
             - pdftotext
             - tldextract
 
-      - name: Add a new user named mar
-        become: yes
-        user:
-          name: "{{ user.newUsername }}"
-          shell: /bin/zsh
-          password: "{{ lookup('env','SETPASS') | password_hash('sha512', 'mysecretsalt') }}"
-          groups: docker
-          state: present 
-
       - name: Add mar user to the sudoers
         become: yes
         copy:
           dest: "/etc/sudoers.d/{{ user.newUsername }}"
           content: "{{ user.newUsername }}  ALL=(ALL)  ALL"
-
-      - name: make aur_builder user
-        become: yes
-        user:
-          name: aur_builder
-          group: wheel
 
       - name: add sudo privlages
         become: yes
@@ -131,7 +116,7 @@
         async: 1200
         poll: 0
         become: yes
-        become_user: aur_builder
+        become_user: mar
         ignore_errors: yes
         aur:
           use: yay
@@ -146,7 +131,7 @@
 
       - name: Deploy SSH Key
         become: yes
-        authorized_key: 
+        authorized_key:
           user: "{{ user.newUsername }}"
           state: present
           key: https://github.com/marnyg.keys
@@ -171,7 +156,7 @@
           dest: ~/.local/share/password-store
           accept_hostkey: yes
         ignore_errors: yes
-      
+
       - name: make dwm src from git
         become: yes
         become_user: "{{ user.newUsername }}"
@@ -199,14 +184,14 @@
       - name: run dotfiles init script
         become: yes
         become_user: "{{ user.newUsername }}"
-        command: 
+        command:
           chdir: "/home/{{ user.newUsername }}/.local/src/dotfilesArch/"
           cmd: ./initScript
 
       - name: fix problem with lf not reading config if it is a symlink
         become: yes
         become_user: "{{ user.newUsername }}"
-        command: 
+        command:
           chdir: "/home/{{ user.newUsername }}/.config/lf"
           cmd: cp ./scope ./scope1
 
@@ -214,9 +199,9 @@
         become: yes
         become_user: "{{ user.newUsername }}"
         ignore_errors: yes
-        command: 
+        command:
           cmd: nvim +PlugInstall +qall --headless
-          
+
           #      - name: set up pam to start gnome keyring at login
           #        become: yes
           #        pamd:
